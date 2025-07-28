@@ -13,7 +13,7 @@ def list_recipes(
     search: Optional[str] = Query(None, description="Search by recipe name"),
     course: Optional[str] = Query(None, description="Filter by course"),
     diet: Optional[str] = Query(None, description="Filter by diet"),
-    state: Optional[str] = Query(None, description="Filter by state"),
+    cuisine: Optional[str] = Query(None, description="Filter by cuisine"),
     limit: int = Query(10, ge=1, le=100, description="Max recipes per page"),
     skip: int = Query(0, ge=0, description="Offset for pagination")
 ):
@@ -24,11 +24,11 @@ def list_recipes(
     if search:
         query = query.filter(Recipe.name.ilike(f"%{search}%"))
     if course:
-        query = query.filter(Recipe.course.has(name=course))
+        query = query.join(Recipe.course).filter(Course.name == course)
     if diet:
-        query = query.filter(Recipe.diet.has(name=diet))
-    if state:
-        query = query.filter(Recipe.state == state)
+        query = query.join(Recipe.diet).filter(Diet.name == diet)
+    if cuisine:
+        query = query.join(Recipe.cuisine).filter(Cuisine.name == cuisine)
 
     total = query.count()
     recipes = query.offset(skip).limit(limit).all()
@@ -54,16 +54,17 @@ def list_recipes(
             {
                 "id": r.id,
                 "name": r.name,
-                "translated_instructions": r.translated_instructions,
-                "state": r.state,
+                "translated_instructions": r.instructions,
                 "course": r.course.name if r.course else None,
                 "diet": r.diet.name if r.diet else None,
                 "cuisine": r.cuisine.name if r.cuisine else None,
-                "ingredients": [i.name for i in r.ingredients],
+                "ingredients": r.ingredients.split(", "),
             }
             for r in recipes
         ]
     }
+
+
 @router.get("/recipes/{id}")
 def get_recipe_by_id(id: int, db: Session = Depends(get_db)):
     recipe = db.query(Recipe).filter(Recipe.id == id).first()
