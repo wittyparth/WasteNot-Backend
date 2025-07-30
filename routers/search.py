@@ -32,12 +32,13 @@ def search_recipes(ingredients: str = Query(..., description="Comma-separated in
 
     return [
         {
-            "id": recipe.id,
-            "name": recipe.name,
-            "matched_ingredients": match_count,
-            "total_ingredients": len(normalize_ingredient_list(recipe.ingredients)),
-            "instructions": recipe.instructions,
-            "ingredients": recipe.ingredients,
+           "id": recipe.id,
+                "name": recipe.name,
+                "translated_instructions": recipe.instructions,
+                "course": recipe.course.name if recipe.course else None,
+                "diet": recipe.diet.name if recipe.diet else None,
+                "cuisine": recipe.cuisine.name if recipe.cuisine else None,
+                "ingredients": recipe.ingredients.split(", "),
         }
         for match_count, recipe in scored
     ]
